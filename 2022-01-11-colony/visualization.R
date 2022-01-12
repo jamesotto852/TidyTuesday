@@ -1,20 +1,25 @@
-library("tidyverse")
 library("here")
+library("tidyverse")
 library("gganimate")
+
+# For plotting spatial data
 library("maps")
-library("ggspatial")
 library("sf")
+library("ggspatial")
+
+# For manual tweening
+library("zoo")
 
 # Load in data
 colony <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-11/colony.csv')
 
-# Cleaning small issue
+# Fixing small data issue
 colony <- filter(colony, months != "2019")
 
 # Loading in sf for plot
 states <- st_as_sf(map("state", plot = FALSE, fill = TRUE))
 
-# Fix implicitly missing data (Not all states included in bee colony data)
+# Fix implicitly missing data (not all states included in bee colony data)
 states_in_data <- colony |>
   pluck("state") |>
   unique() |>
@@ -44,7 +49,7 @@ f_find_quarter <- function(x) {
 colony <- colony |>
   mutate(time = year + f_find_quarter(months))
 
-# Function converting encoded time -> title
+# Function converting encoded time -> title for animation
 time_to_title <- function(x) {
   if (length(x) > 1) return(map_chr(x, quarter_to_title))
   
@@ -61,7 +66,7 @@ time_to_title <- function(x) {
   str_c(y, ", ", q)
 }
 
-# Custom tweening for transition_manual
+# Helper function, custom tweening for transition_manual
 source(here("2022-01-11-colony/tween_group.R"))
 
 anim <- colony |>
@@ -69,7 +74,7 @@ anim <- colony |>
   select(state, time, colony_lost_pct) |>
   nest(data = c(time, colony_lost_pct)) |>
   rowwise() |>
-  mutate(interp = tween_group(data, k = 7, p = 6)) |>
+  mutate(interp = tween_group(data, k = 15, p = 14)) |>
   unnest(cols = c(interp)) |>
   select(-data) |>
   group_by(state, time) |>
@@ -94,10 +99,17 @@ anim <- colony |>
   transition_manual(time)
   
 
-
-animate(anim, fps = 15, width = 1500, height = 650, start_pause = 15, end_pause = 30) 
+# Warning: this takes a while
+animate(anim, fps = 30, duration = 26, width = 1500, height = 650) 
+# animate(anim, fps = 30, duration = 26, width = 1500, height = 650, start_pause = 15, end_pause = 30) 
 anim_save(here::here("2022-01-11-colony/colony.gif"))
-  
+
+## Converting from gif to .mp4
+# need ffmpeg (sudo apt install ffmpeg)
+system(
+  'cd 2022-01-11-colony
+  ffmpeg -i colony.gif -movflags faststart -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" colony.mp4'
+)
 
   
   
