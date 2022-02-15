@@ -11,8 +11,7 @@ in.
 
 ## Week 2, 2022 – Bee Colony Losses
 
-<video width="1000" height="433" autoplay loop>
-<source src="2022-01-11-colony/colony.mp4" type="video/mp4">
+<video width="1000" height="433" autoplay loop src="2022-01-11-colony/colony.mp4" type="video/mp4">
 </video>
 
 ## Week 4, 2022 – BoardGameGeek
