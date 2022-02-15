@@ -1,0 +1,185 @@
+---
+title: "Visualizing BoardGameGeek data with ggdensity"
+author: "James Otto"
+date: "2/15/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.width=12) 
+
+library("tidyverse")
+
+theme_set(theme_bw(14))
+theme_update(
+  panel.grid.minor = element_blank(),
+  strip.background = element_rect(fill = "white")
+)
+```
+
+
+## The Data
+
+We're going to be looking at the BoardGameGeek data from week 4 of TidyTuesday 2022.
+This data set consists of community ratings and other stats for a little more than 20,000 board games.
+First we need to load in the data and perform some basic cleaning, joining the `ratings` and the`details` data on the `id` column:
+
+```{r data_loading, eval = FALSE}
+library("tidyverse")
+
+data <- tidytuesdayR::tt_load('2022-01-25')
+
+df <- data$ratings |>
+  left_join(data$details, by = "id")
+```
+<!-- Want the prev. chunk to be visible, more accessible -->
+```{r data_loading_real, echo = FALSE, message = FALSE, cache = TRUE}
+library("tidyverse")
+
+data <- list()
+data$ratings <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-25/ratings.csv')
+data$details <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-25/details.csv')
+
+df <- data$ratings |>
+  left_join(data$details, by = "id")
+```
+
+## Looking at `boardgamecategory`
+
+Something that is immediately stands out to me is the variable `boardgamecategory`.
+It might be really interesting to compare measurements across categories! 
+But, there is a problem---this column isn't "tidy":
+```{r data_boardgamecategory}
+select(df, name, boardgamecategory)
+```
+
+Luckily, this is an easy fix with some string processing.
+We can use `stringr::str_extract_all()` to condense the categories from each row into a list,
+then use `tidyr::unnest()` to flatten out the resulting list column.
+
+```{r data_boardgamecategory_fix}
+df <- df |>
+  filter(!is.na(boardgamecategory)) |>
+  mutate(boardgamecategory = str_extract_all(boardgamecategory, "(?<=')[^,]*(?=')")) |>
+  unnest(boardgamecategory)
+
+select(df, name, boardgamecategory)
+```
+
+Great! Now, let's see what the most popular categories are:
+```{r data_boardgamecategory_top10}
+top_categories <- df |>
+  group_by(boardgamecategory) |>
+  summarize(n = n()) |>
+  arrange(desc(n)) |>
+  slice_head(n = 10)
+
+top_categories
+```
+
+Surprisingly, more games are categorized as "Card Games" than any other category on BoardGameGeek!
+We can create a simple visual showing the prevalence of each of these top 10 categories:
+```{r plot_boardgamecategory_top10}
+top_categories |>
+  mutate(boardgamecategory = fct_reorder(boardgamecategory, n, .desc = TRUE)) |>
+  ggplot(aes(x = boardgamecategory, y = n)) +
+  geom_col() +
+  labs(
+    x = "Category",
+    y = NULL
+  )
+```
+
+## Looking at `playingtime`, `minplayers`, and `maxplayers`
+
+Let's put the work that we've done on the categories field on hold for a minute and 
+look at how a game's average number of players relates to its average play time.
+Before making any plots, I would suspect that as the number of players increases the average play time increases.
+That is to say, I would expect positive correlation between the two variables.
+
+```{r playtime_v_noplayers}
+# First, we need to do a little more cleaning
+# Filter out some outliers, compute avg_players
+df <- df |> 
+  filter(maxplayers < 20) |>
+  filter(playingtime < 1000) |> 
+  mutate(playingtime = playingtime / 60) |>
+  mutate(avg_players = (minplayers + maxplayers)/2) 
+  
+df |>
+  distinct(name, .keep_all = TRUE) |> # Don't care about categories right now
+  ggplot(aes(x = avg_players, y = playingtime)) +
+  geom_jitter(height = .5, width = .5, size = .1, alpha = .5) +
+  scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12)) +
+  scale_y_continuous(breaks = 0:8 * 2) +
+  coord_cartesian(ylim = c(0, 14), expand = FALSE) +
+  labs(
+    x = "Average no. of players",
+    y = "Average play time (Hours)"
+  )
+```
+
+Interestingly, this does not seem to be the case!
+In fact it seems like it may be the opposite---play
+time appears to be maximized when there are between 2 and 4 players and drop off as the number of players increases.
+
+Unfortunately, the above plot has a few issues that stand in the way of us making useful observations.
+First, I have had to do some severe jittering to eliminate graphical artifacts resulting from the discrete nature of the data.
+Notice, several of the points seem to correspond to games with fewer than 0 average players! 
+Second, there is pretty severe overplotting.
+Although I have attempted to avoid this by setting both the `size` and `alpha` arguments,
+the plot is very crowded, especially around the horizontal axis between the 2 and 4 player ticks.
+
+Fortunately, I know of a tool that can help with both of these issues---**ggdensity**!
+```{r playtime_v_noplayers_ggdensity}
+library("ggdensity")
+
+df |> 
+  distinct(name, .keep_all = TRUE) |> # Don't care about categories right now
+  ggplot(aes(x = avg_players, y = playingtime)) +
+  geom_hdr(adjust = c(2, 4)) + # Need to set adjust b/c of discreteness
+  scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12)) +
+  scale_y_continuous(breaks = 0:8 * 2) +
+  coord_cartesian(ylim = c(0, 14), expand = FALSE) +
+  labs(
+    x = "Average no. of players",
+    y = "Average play time (Hours)"
+  )
+```
+
+Above, we are plotting estimated "Highest Density Regions" (HDRs)---
+these are the smallest regions containing 50%, 80%, 95%, and 99% of the data (essentially).
+For more information, check out the **ggdensity** <a href="https://github.com/jamesotto852/ggdensity">repo</a>.
+See that the issues of overplotting and jittering are eliminated as we have abandoned the strategy of plotting individual points.
+Now that we've taken care of these problems, we can see that there is a kind of negative association between 
+the average number of players and average play time. 
+This is unexpected! Let's look a little deeper, leveraging our previous work on `boardgamecategory`.
+
+## Putting it all together
+
+Does this negative association hold true across the most popular categories? 
+Or is this yet another example of <a href="https://en.wikipedia.org/wiki/Simpson%27s_paradox">Simpson's paradox</a>?
+There's only one way to find out---faceting! 
+
+```{r playtime_v_noplayers_faceted}
+df |> 
+  filter(boardgamecategory %in% top_categories$boardgamecategory[1:5]) |>
+  mutate(boardgamecategory = fct_reorder(boardgamecategory, playingtime, mean, .desc = TRUE)) |>
+  ggplot(aes(x = avg_players, y = playingtime, fill = boardgamecategory)) +
+  geom_hdr(adjust = 2) + # Need to set adjust b/c of discreteness
+  facet_wrap(vars(boardgamecategory), ncol = 5) +
+  scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12)) +
+  scale_y_continuous(breaks = 0:8 * 2) +
+  scale_fill_brewer(type = "qual", palette = 2, guide = NULL) +
+  coord_cartesian(ylim = c(0, 14), expand = FALSE) +
+  labs(
+    x = "Average no. of players",
+    y = "Average play time (Hours)"
+  )
+```
+
+This plot offers a new perspective.
+In each category, it appears to be the case that average play time and number of players are independent.
+It looks like "Wargame" board games tend to involve fewer players and last signficantly longer than other categories.
+Combining board games across categories creates the illusion that play time and number of players is negatively correlated---another
+point for Simpson!
