@@ -47,14 +47,14 @@ df <- data$ratings |>
 ## Looking at `boardgamecategory`
 
 Something that is immediately stands out to me is the variable `boardgamecategory`.
-It might be really interesting to compare measurements across categories! 
+It might be really interesting to compare stats across categories! 
 But, there is a problem---this column isn't "tidy":
 ```{r data_boardgamecategory}
 select(df, name, boardgamecategory)
 ```
 
 Luckily, this is an easy fix with some string processing.
-We can use `stringr::str_extract_all()` to condense the categories from each row into a list,
+We can use `stringr::str_extract_all()` to extract the categories from each row into a list,
 then use `tidyr::unnest()` to flatten out the resulting list column.
 
 ```{r data_boardgamecategory_fix}
@@ -110,8 +110,8 @@ df |>
   distinct(name, .keep_all = TRUE) |> # Don't care about categories right now
   ggplot(aes(x = avg_players, y = playingtime)) +
   geom_jitter(height = .5, width = .5, size = .1, alpha = .5) +
-  scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12)) +
-  scale_y_continuous(breaks = 0:8 * 2) +
+  scale_x_continuous(breaks = seq(0, 12, by = 2)) +
+  scale_y_continuous(breaks = seq(0, 14, by = 2)) +
   coord_cartesian(ylim = c(0, 14), expand = FALSE) +
   labs(
     x = "Average no. of players",
@@ -121,14 +121,14 @@ df |>
 
 Interestingly, this does not seem to be the case!
 In fact it seems like it may be the opposite---play
-time appears to be maximized when there are between 2 and 4 players and drop off as the number of players increases.
+time appears to be maximized when there are between 2 and 4 players and drops off as the number of players increases.
 
 Unfortunately, the above plot has a few issues that stand in the way of us making useful observations.
 First, I have had to do some severe jittering to eliminate graphical artifacts resulting from the discrete nature of the data.
 Notice, several of the points seem to correspond to games with fewer than 0 average players! 
 Second, there is pretty severe overplotting.
 Although I have attempted to avoid this by setting both the `size` and `alpha` arguments,
-the plot is very crowded, especially around the horizontal axis between the 2 and 4 player ticks.
+the plot is still very crowded---especially around the horizontal axis between the 2 and 4 player ticks.
 
 Fortunately, I know of a tool that can help with both of these issues---**ggdensity**!
 ```{r playtime_v_noplayers_ggdensity}
@@ -138,8 +138,8 @@ df |>
   distinct(name, .keep_all = TRUE) |> # Don't care about categories right now
   ggplot(aes(x = avg_players, y = playingtime)) +
   geom_hdr(adjust = c(2, 4)) + # Need to set adjust b/c of discreteness
-  scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12)) +
-  scale_y_continuous(breaks = 0:8 * 2) +
+  scale_x_continuous(breaks = seq(0, 12, by = 2)) +
+  scale_y_continuous(breaks = seq(0, 14, by = 2)) +
   coord_cartesian(ylim = c(0, 14), expand = FALSE) +
   labs(
     x = "Average no. of players",
@@ -151,7 +151,7 @@ Above, we are plotting estimated "Highest Density Regions" (HDRs)---
 these are the smallest regions containing 50%, 80%, 95%, and 99% of the data (essentially).
 For more information, check out the **ggdensity** <a href="https://github.com/jamesotto852/ggdensity">repo</a>.
 See that the issues of overplotting and jittering are eliminated as we have abandoned the strategy of plotting individual points.
-Now that we've taken care of these problems, we can see that there is a kind of negative association between 
+Now that we've taken care of these problems, we can see that there is a negative association between 
 the average number of players and average play time. 
 This is unexpected! Let's look a little deeper, leveraging our previous work on `boardgamecategory`.
 
@@ -168,8 +168,8 @@ df |>
   ggplot(aes(x = avg_players, y = playingtime, fill = boardgamecategory)) +
   geom_hdr(adjust = 2) + # Need to set adjust b/c of discreteness
   facet_wrap(vars(boardgamecategory), ncol = 5) +
-  scale_x_continuous(breaks = c(0, 2, 4, 6, 8, 10, 12)) +
-  scale_y_continuous(breaks = 0:8 * 2) +
+  scale_x_continuous(breaks = seq(0, 12, by = 2)) +
+  scale_y_continuous(breaks = seq(0, 14, by = 2)) +
   scale_fill_brewer(type = "qual", palette = 2, guide = NULL) +
   coord_cartesian(ylim = c(0, 14), expand = FALSE) +
   labs(
@@ -180,6 +180,6 @@ df |>
 
 This plot offers a new perspective.
 In each category, it appears to be the case that average play time and number of players are independent.
-It looks like "Wargame" board games tend to involve fewer players and last signficantly longer than other categories.
+Also, it looks like "Wargame" board games tend to involve fewer players and last signficantly longer than other categories.
 Combining board games across categories creates the illusion that play time and number of players is negatively correlated---another
 point for Simpson!
