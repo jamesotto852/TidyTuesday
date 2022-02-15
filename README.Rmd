@@ -1,3 +1,6 @@
+---
+output: github_document
+---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -11,8 +14,8 @@ in.
 
 ## Week 2, 2022 – Bee Colony Losses
 
-![Bee Colony Losses](2022-01-11-colony/colony.gif) ## Week 4, 2022 –
-BoardGameGeek
+![Bee Colony Losses](2022-01-11-colony/colony.gif)
+## Week 4, 2022 – BoardGameGeek
 
 ![BoardGameGeek](2022-01-25-boardgames/boardgames.png)
 
