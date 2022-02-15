@@ -1,4 +1,4 @@
-library("tidyverse"); 
+library("tidyverse") 
 library("ggdensity")
 
 library("sysfonts")
@@ -112,7 +112,7 @@ p <- chocolate |>
   scale_fill_brewer(name = "Continent of Origin", type = "qual", palette = 2) +
   facet_grid(continent ~ year) +
   labs(
-    title = "Visualizing the relationship between chocolate bars' ratings and cocoa percentage",
+    title = "Chocolate Bars' Ratings and Cocoa Percentage",
     caption = "Source: Flavors of Cacao | Graphic created by @jamesotto852 using ggdensity"
   ) +
   theme(
@@ -140,10 +140,43 @@ ggsave(here::here("2022-01-18-chocolate/chocolate.png"), p, width = 1600, height
 
 
 
+library("gganimate")
+p <- chocolate |> 
+  # filter(!continent %in% c("Asia", "Oceania")) |>
+  ggplot(aes(x = rating, y = cocoa_percent, fill = continent, group = continent)) +
+  geom_hdr(method = "mvnorm", xlim = c(0, 5)) +
+  geom_point(shape = 21, size = .2, stroke = .1) +
+  scale_x_continuous(name = "Rating") +
+  scale_y_continuous(name = "Cocoa Percentage", labels = scales::percent_format(accuracy = 2)) +
+  scale_fill_brewer(name = "Continent of Origin", type = "qual", palette = 2) +
+  # facet_grid(1 ~ continent) +
+  facet_wrap(vars(continent), ncol = 3) +
+  labs(
+    title = "Chocolate Bars' Ratings and Cocoa Percentage",
+    caption = "Source: Flavors of Cacao | Graphic created by @jamesotto852 using ggdensity"
+  ) +
+  theme(
+    plot.title = element_text(size = 18, margin = margin(b = .06, unit = "cm")),
+    plot.caption = element_text(size = 10, margin = margin(t = .15, b = .03, unit = "cm")),
+    legend.margin = margin(l = .01, t = .15, b = .15, unit = "cm"),
+    legend.key.size = unit(.25, "cm"),
+    legend.title = element_text(margin = margin(b = -.075, unit = "cm")),
+    legend.text = element_text(margin = margin(l = -.125, r = 0, unit = "cm"), hjust = 0),
+    strip.text.x = element_text(margin = margin(t = .075, b = .075, unit = "cm")),
+    strip.text.y = element_text(margin = margin(r = .075, l = .075, unit = "cm")),
+    axis.ticks = element_line(size = .3),
+    axis.ticks.length = unit(.04, "cm"),
+    axis.text.x = element_text(margin = margin(t = .04, unit = "cm")),
+    axis.text.y = element_text(margin = margin(r = .03, unit = "cm")),
+    panel.spacing = unit(.1, "lines")
+  ) +
+  transition_states(year)
+  
 
 
 
 
+ggsave(here::here("2022-01-18-chocolate/chocolate.png"), p, width = 1200, height = 600, units = "px")
 
 
   
