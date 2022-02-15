@@ -11,11 +11,12 @@ in.
 
 ## Week 2, 2022 – Bee Colony Losses
 
-![Bee Colony Losses](2022-01-11-colony/colony.gif) ## Week 4, 2022 –
-BoardGameGeek
+![Bee Colony Losses](2022-01-11-colony/colony.gif) <br>
 
-![BoardGameGeek](2022-01-25-boardgames/boardgames.png)
+## Week 4, 2022 – BoardGameGeek
+
+![BoardGameGeek](2022-01-25-boardgames/boardgames.png) <br>
 
 ## Week 3, 2022 – Chocolate Bar Ratings
 
-![Chocolate Bar Ratings](2022-01-18-chocolate/chocolate.png)
+![Chocolate Bar Ratings](2022-01-18-chocolate/chocolate.png) <br>
