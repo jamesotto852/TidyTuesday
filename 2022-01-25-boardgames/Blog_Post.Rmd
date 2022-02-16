@@ -20,9 +20,9 @@ theme_update(
 
 ## The Data
 
-We're going to be looking at the BoardGameGeek data from week 4 of TidyTuesday 2022.
-This data set consists of community ratings and other stats for a little more than 20,000 board games.
-First we need to load in the data and perform some basic cleaning, joining the `ratings` and the`details` data on the `id` column:
+We're going to be looking at the <a href="https://boardgamegeek.com/">BoardGameGeek</a> data from week 4 of TidyTuesday 2022.
+This data set consists of community ratings and other stats for just over 20,000 board games.
+The first thing we need to do is load in the data and perform some basic cleaning, joining the `ratings` and the`details` data on the `id` column:
 
 ```{r data_loading, eval = FALSE}
 library("tidyverse")
@@ -46,8 +46,8 @@ df <- data$ratings |>
 
 ## Looking at `boardgamecategory`
 
-Something that is immediately stands out to me is the variable `boardgamecategory`.
-It might be really interesting to compare stats across categories! 
+Something that immediately stands out to me is the variable `boardgamecategory`.
+Comparing stats across different types of board games could end up being really interesting!
 But, there is a problem---this column isn't "tidy":
 ```{r data_boardgamecategory}
 select(df, name, boardgamecategory)
@@ -77,7 +77,7 @@ top_categories <- df |>
 top_categories
 ```
 
-Surprisingly, more games are categorized as "Card Games" than any other category on BoardGameGeek!
+Surprisingly, more games are categorized as "Card Games" than any other category!
 We can create a simple visual showing the prevalence of each of these top 10 categories:
 ```{r plot_boardgamecategory_top10}
 top_categories |>
