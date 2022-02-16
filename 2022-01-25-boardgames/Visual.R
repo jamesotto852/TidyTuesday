@@ -53,7 +53,7 @@ p <- df |>
   labs(
     x = "Average no. of players",
     y = "Average play time (Hours)",
-    title = "Board Games' Average Play Time and Players",
+    title = "Top 5 Board Game Types: Play Time vs. Number of Players",
     caption = "Source: BoardGameGeek | Graphic created by @jamesotto852 using ggdensity"
   )
 
